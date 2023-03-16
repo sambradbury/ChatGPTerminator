@@ -6,9 +6,21 @@ import os
 import json
 import sys
 import configparser
-from prompt_toolkit import prompt
+from prompt_toolkit.shortcuts import prompt
+from prompt_toolkit.key_binding import KeyBindings
 from datetime import datetime
 from pathlib import Path
+
+kb = KeyBindings()
+
+@kb.add('escape', 'enter')
+def _(event):
+    event.current_buffer.insert_text('\n')
+
+@kb.add('enter')
+def _(event):
+    event.current_buffer.validate_and_handle()
+
 
 class GPTerminator:
     def __init__(self):
@@ -48,15 +60,16 @@ class GPTerminator:
         if self.prompt_count == 0:
             self.printError("cant save an empty discussion")
         else:
-            self.console.print(f"[yellow]|!|[/][bold green]Name this chat: [/bold green][bold gray]> [/bold gray]", end="")
-            user_in = prompt().strip()
+            self.console.print(f"[yellow]|!|[/][bold green]Name this chat: [/bold green][bold gray]", end="\n")
+            user_in = prompt("> ", key_bindings=kb, multiline=True).strip()
             save_path = Path('.') / self.save_folder / f"{user_in}.json"
             with open(save_path, "w") as f:
                 json.dump(self.msg_hist, f, indent=4)
 
     def queryUser(self):
-        self.console.print(f"[yellow]|{self.prompt_count}|[/][bold green] Input [/bold green][bold gray]> [/bold gray]", end="")
-        user_in = prompt().strip()
+        self.console.print(f"[yellow]|{self.prompt_count}|[/][bold green] Input [/bold green][bold gray]", end="\n")
+        user_in = prompt("> ", key_bindings=kb, multiline=True).strip()
+        self.console.print()
         if user_in == '':
             self.printError("user input is empty")
         elif user_in[0] == self.cmd_init:
@@ -112,12 +125,12 @@ class GPTerminator:
             sys.exit()
 
     def printBanner(self):
-        welcome_ascii = '''                                                        
- _____ _____ _____               _         _           
-|   __|  _  |_   _|___ ___ _____|_|___ ___| |_ ___ ___ 
+        welcome_ascii = '''
+ _____ _____ _____               _         _
+|   __|  _  |_   _|___ ___ _____|_|___ ___| |_ ___ ___
 |  |  |   __| | | | -_|  _|     | |   | .'|  _| . |  _|
-|_____|__|    |_| |___|_| |_|_|_|_|_|_|__,|_| |___|_|  
-'''                                                       
+|_____|__|    |_| |___|_| |_|_|_|_|_|_|__,|_| |___|_|
+'''
         self.console.print(f"[bold green]{welcome_ascii}[/bold green]", end='')
         self.console.print(f"[bright_black]System prompt: {self.sys_prmpt}[/]")
         self.console.print(f"[bright_black]Model: {self.model}[/]")
